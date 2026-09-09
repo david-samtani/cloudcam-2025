@@ -1,7 +1,0 @@
-opencv-python
-ffmpeg
-matplotlib
-numpy
-astropy
-skyfield
-photutils
