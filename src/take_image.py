@@ -4,16 +4,16 @@ from datetime import datetime
 import os
 import auto_brightness
 
-def capture_image(out_dir):
-    # save server address and port
-    HOST = "128.171.80.243"
-    PORT = 915
+CAMERA_HOST = os.getenv("CLOUDCAM_HOST", "localhost")
+CAMERA_PORT = int(os.getenv("CLOUDCAM_PORT", "915"))
 
+
+def capture_image(out_dir):
     # etimes = [10, 15, 20, 30, 45, 60]
     # gains = [10, 50, 100, 150, 200, 300]
 
     # create socket and connect
-    with socket.create_connection((HOST, PORT)) as s:
+    with socket.create_connection((CAMERA_HOST, CAMERA_PORT)) as s:
         s.sendall(('etime').encode() + b'\n')
         etime_resp = s.recv(1024).decode()
         curr_etime = float(etime_resp.strip().split()[-1])
