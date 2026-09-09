@@ -1,6 +1,6 @@
 # CloudCam - Automated Sky Imaging System
 
-A high-sensitivity, fully-automated capture-overlay-timelapse system for CFHT CloudCams that replaces the original DSLR system with a modern, Python-driven stack.
+A high-sensitivity, fully automated capture, overlay, and timelapse system for CFHT CloudCams that replaces the original DSLR system with a modern, Python-driven stack.
 
 ## Table of Contents
 
@@ -9,6 +9,7 @@ A high-sensitivity, fully-automated capture-overlay-timelapse system for CFHT Cl
   - [Core Functionality](#core-functionality)
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
+  - [Camera Configuration](#camera-configuration)
 - [Project Structure](#project-structure)
 - [Module Documentation](#module-documentation)
   - [`automated_process.py` - Main Daemon](#automated_processpy---main-daemon)
@@ -32,7 +33,7 @@ CloudCam is an intelligent astronomical imaging system that:
 - Uploads current images and timelapses to the CFHT CloudCam website
 - Creates nightly timelapse videos and lightweight 30-minute "recent activity" loops
 
-> **Note:** This repository was ported from a private GitLab instance at CFHT where most of the original development occurred. As a result, the commit history starts fresh on GitHub.
+> **Development history:** This repository was transferred from CFHT's private GitLab instance to GitHub with permission at the end of my internship. Most of the original version history remains in the company GitLab, so this repository begins as a snapshot of the project near the end of development.
 
 ## Features
 
@@ -44,6 +45,7 @@ CloudCam is an intelligent astronomical imaging system that:
 - **Planetary Tracking**: Real-time ephemeris calculation for planets, Sun, Moon, and ISS
 - **Live Monitoring**: Real-time image display and status logging
 - **Timelapse Generation**: Automated creation of nightly MP4 timelapses
+- **Web Interface**: PHP frontend backed by FastAPI for live camera viewing, overlay selection, and timelapse generation
 
 ## Installation
 
@@ -58,6 +60,17 @@ Check the Dockerfile in the repository for complete dependencies. Key requiremen
 - Skyfield
 - FastAPI (for web interface)
 
+### Camera Configuration
+
+The camera connection is configured with environment variables rather than a hardcoded observatory address:
+
+```bash
+export CLOUDCAM_HOST=<camera-host>
+export CLOUDCAM_PORT=<camera-port>
+```
+
+`CLOUDCAM_HOST` defaults to `localhost` and `CLOUDCAM_PORT` defaults to `915` for local development.
+
 ## Project Structure
 
 Below is an overview of the `CloudCam` repository's file and folder structure, along with brief descriptions of each component.
@@ -69,44 +82,46 @@ CloudCam-main/
 ├── Dockerfile                  # Docker image setup for deployment
 ├── README.md                   # Main project documentation
 ├── docker-compose.yml          # Docker multi-container setup
-├── requirments.txt             # Python package dependencies
+├── requirements.txt            # Python package dependencies
 
-├── Conceptual_design/          # Project Design & Planning
+├── Conceptual_design/          # Project design and planning
 │   ├── .gitkeep
 │   ├── cloudcam_requirements_conceptual_design.md
 │   └── initial.wcs
 
-├── astrometry-net-indexes/     # Star Calibration Index Files
+├── astrometry-net-indexes/     # Star calibration index files
 │   ├── index-4118.fits
 │   └── index-4119.fits
 
-├── astrometrynet_files/        # Supporting Files for Calibration
+├── astrometrynet_files/        # Supporting files for calibration
 │   ├── astrometry-ngc.png
 │   └── initial_wcs_values.txt
 
-├── data/                       # Astronomical Data Inputs
+├── data/                       # Astronomical data inputs
 │   ├── de442s.bsp
 │   ├── ephem.cat
 │   ├── hawaiian_const.lines
 │   ├── hawaiian_const.stars
 │   └── tle.txt
 
-├── fastapi/                    # Backend API Service
-│   ├── fastapi_astrometry.py       # API endpoint for astrometry operations
-│   ├── fastapi_timelapse.py        # API endpoint for timelapse generation
-│   ├── main.py                     # FastAPI app entry point
-│   ├── requirements.txt            # Specific dependencies for this service
-│   ├── timelapse_overlay.py        # Logic for applying overlays to timelapse frames
-│   ├── __pycache__/                # Cached Python bytecode
-│   └── venv/                       # Local Python virtual environment (excluded from Git)
+├── fastapi/                    # Backend API service
+│   ├── fastapi_astrometry.py   # API endpoint for astrometry operations
+│   ├── fastapi_timelapse.py    # API endpoint for timelapse generation
+│   ├── main.py                 # FastAPI app entry point
+│   ├── requirements.txt        # Dependencies for the API service
+│   └── timelapse_overlay.py    # Applies requested overlays to timelapse frames
 
-├── src/                        # Core Logic & Automation Modules
-│   ├── astrometry.py               # Star pattern solving and celestial alignment
-│   ├── auto_brightness.py          # Dynamic brightness/auto-exposure logic
-│   ├── automated_process.py       # Main orchestration pipeline
-│   ├── take_image.py              # Camera control and image acquisition
-│   ├── timelapse.py               # Timelapse creation logic
-│   └── __pycache__/               # Bytecode cache (autogenerated)
+├── src/                        # Core logic and automation modules
+│   ├── astrometry.py           # Star pattern solving and celestial alignment
+│   ├── auto_brightness.py      # Dynamic brightness and auto-exposure logic
+│   ├── automated_process.py    # Main orchestration pipeline
+│   ├── take_image.py           # Camera control and image acquisition
+│   └── timelapse.py            # Timelapse creation logic
+
+└── website/                    # PHP frontend for CloudCam viewing and controls
+    ├── about.php               # CloudCam information page
+    ├── index.php               # Live camera and overlay-selection interface
+    └── timelapse2025.php       # Timelapse browsing and custom overlay generation
 ```
 
 ## Module Documentation
@@ -145,8 +160,8 @@ Maintains optimal image brightness through intelligent exposure management:
 - Fast mode for rapid twilight transitions
 
 ### `take_image.py` - Camera Interface
-Manages TCP communication with camera server:
-- Connects to camera server (default: 128.171.80.243:915)
+Manages TCP communication with the camera server:
+- Reads the camera host and port from environment variables
 - Retrieves current camera settings
 - Captures and saves timestamped images
 - Updates camera settings based on brightness analysis
@@ -157,7 +172,7 @@ Creates MP4 timelapses from image sequences:
 - Supports variable frame rates (default: 10 fps)
 - Automatic frame resizing
 - H.264 encoding
-- Saves timeslapses to the CFHT's NAS (CFHT's data storage unit)
+- Saves timelapses to the CFHT's NAS (CFHT's data storage unit)
 
 ## Usage
 
@@ -170,16 +185,15 @@ Creates MP4 timelapses from image sequences:
 6. At dawn, a complete nightly timelapse is generated
 
 ### Web Interface
-[Official CFHT Index CloudCam website page](https://www.cfht.hawaii.edu/en/gallery/cloudcams/index.php) | [Official CFHT Timelapse CloudCam website page](https://www.cfht.hawaii.edu/en/gallery/cloudcams/timelapse.php)
 
-Access the web interface for:
+[Official CFHT CloudCams website](https://www.cfht.hawaii.edu/en/gallery/cloudcams/)
+
+The web interface supports:
 - Live camera feed viewing
-- Custom overlay selection for live camera feed
+- Custom overlay selection for the live camera feed
 - Timelapse downloads
-- Custom overlay selection generation for timelapses
-- Hawaiian/Western constellations/stars and planet overlay labeling customizability
-
-> **Note:** New web pages are not publicly avalible until camera deployment.
+- Custom overlay generation for timelapses
+- Hawaiian and Western constellation, star, and planet labeling options
 
 ## License
 
@@ -188,5 +202,3 @@ This project is licensed under the [MIT License](LICENSE).
 You are free to use, modify, and distribute this software for any purpose, including commercial applications, as long as the original license and copyright notice are included.
 
 © 2025 David Samtani
-
----
