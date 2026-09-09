@@ -45,7 +45,7 @@ CloudCam is an intelligent astronomical imaging system that:
 - **Planetary Tracking**: Real-time ephemeris calculation for planets, Sun, Moon, and ISS
 - **Live Monitoring**: Real-time image display and status logging
 - **Timelapse Generation**: Automated creation of nightly MP4 timelapses
-- **Web Interface**: PHP frontend backed by FastAPI for live camera viewing, overlay selection, and timelapse generation
+- **Web Interface**: PHP frontend backed by FastAPI for live camera viewing and custom overlay/timelapse generation. The custom overlay controls were developed as part of the project but were not deployed to the public CFHT CloudCam website.
 
 ## Installation
 
@@ -188,12 +188,9 @@ Creates MP4 timelapses from image sequences:
 
 [Official CFHT CloudCams website](https://www.cfht.hawaii.edu/en/gallery/cloudcams/)
 
-The web interface supports:
-- Live camera feed viewing
-- Custom overlay selection for the live camera feed
-- Timelapse downloads
-- Custom overlay generation for timelapses
-- Hawaiian and Western constellation, star, and planet labeling options
+The deployed CFHT CloudCam system publishes camera imagery and timelapses to the public website.
+
+This repository also includes PHP/FastAPI tooling for custom constellation, star, and planet overlays and custom timelapse generation. Those overlay features were developed as part of the project but were not deployed to the public CFHT CloudCam website.
 
 ## License
 
